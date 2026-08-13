@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Foresight Without Seeing: Latent Futures for World Action Models</title>
+  <meta name="description" content="ForeWAM exposes predictive dynamics to direct action policies through hidden Future-KV states and latent-action-supervised dynamics registers, without decoding future videos at deployment.">
+  <meta property="og:title" content="Foresight Without Seeing: Latent Futures for World Action Models">
+  <meta property="og:description" content="Latent Futures for World Action Models">
+  <meta property="og:image" content="https://jackhuang0701.github.io/forewam/static/images/social-card.svg">
+  <meta property="og:url" content="https://jackhuang0701.github.io/forewam/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="static/images/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+  <div class="progress" aria-hidden="true"></div>
+
+  <nav class="side-nav" aria-label="Page sections">
+    <div class="side-nav-title">Contents</div>
+    <a href="#overview">01 <span>Overview</span></a>
+    <a href="#method">02 <span>Method</span></a>
+    <a href="#results">03 <span>Results</span></a>
+    <a href="#ood">04 <span>OOD</span></a>
+    <a href="#ablation">05 <span>Ablation</span></a>
+    <a href="#bibtex">06 <span>BibTeX</span></a>
+  </nav>
+
+  <header class="hero shell">
+    <div class="eyebrow reveal">FOREWAM / WORLD ACTION MODELS / 2026</div>
+    <h1 class="reveal">
+      <span class="title-line">Foresight Without Seeing:<br>Latent Futures for World Action Models</span>
+    </h1>
+    <p class="subtitle reveal">A direct action policy with predictive dynamics, without decoding future videos at deployment.</p>
+
+    <p class="authors reveal">
+      <a href="https://github.com/JackHuang0701" target="_blank" rel="noopener">Jiakai Huang</a><sup>1,2</sup>
+      <span>Zhongbo Wu<sup>1,2</sup></span>
+      <span>Zheng Zhang<sup>2,3</sup></span>
+      <span>Zihan Wang<sup>1</sup></span>
+      <span>Shan You<sup>2</sup></span>
+      <span>Tao Huang<sup>1</sup></span>
+    </p>
+    <p class="affiliations reveal">
+      <span><sup>1</sup>Shanghai Jiao Tong University</span>
+      <span><sup>2</sup>ACE Robotics</span>
+      <span><sup>3</sup>Nanyang Technological University</span>
+    </p>
+
+    <div class="actions reveal">
+      <a class="button button-primary" href="static/paper/ForeWAM.pdf" target="_blank" rel="noopener">Paper <span>PDF</span></a>
+      <a class="button" href="https://arxiv.org/abs/2608.11605" target="_blank" rel="noopener">arXiv <span>2608.11605</span></a>
+      <span class="button button-disabled" aria-disabled="true">Code <span>Coming soon</span></span>
+      <a class="button" href="#bibtex">Cite <span>BibTeX</span></a>
+    </div>
+
+    <div class="latent-stage reveal" aria-label="Conceptual visualization of ForeWAM latent futures">
+      <div class="stage-grid"></div>
+      <div class="state state-current">
+        <small>OBSERVED</small>
+        <strong>C</strong>
+        <span>current latent</span>
+      </div>
+      <div class="flow flow-one"><i></i><i></i><i></i></div>
+      <div class="state state-future">
+        <small>UNRENDERED</small>
+        <strong>F</strong>
+        <span>future slots</span>
+      </div>
+      <div class="cache">
+        <small>ONE PREFILL</small>
+        <div class="cache-stack"><i></i><i></i><i></i><i></i></div>
+        <span>Future-KV</span>
+      </div>
+      <div class="flow flow-two"><i></i><i></i><i></i></div>
+      <div class="state state-action">
+        <small>EXECUTABLE</small>
+        <strong>A</strong>
+        <span>action chunk</span>
+      </div>
+      <p class="stage-note">Predictive context travels through hidden states, not decoded future frames.</p>
+    </div>
+  </header>
+
+  <main>
+    <section id="overview" class="section shell">
+      <div class="section-index">01 / OVERVIEW</div>
+      <div class="section-grid">
+        <div>
+          <h2>Predict the dynamics.<br><em>Skip the pixels.</em></h2>
+        </div>
+        <div class="body-copy">
+          <p class="lead">World Action Models face a practical trade-off: explicit future generation exposes scene evolution to the policy, but iterative video denoising adds latency. Direct policies act efficiently, yet lack an explicit inference-time interface for predictive dynamics.</p>
+          <p><strong>ForeWAM</strong> bridges this gap. It performs one Video DiT prefill over the current visual latent and stochastic future slots, then reuses the resulting layer-wise key-value states throughout action denoising. A compact set of dynamics registers is shaped by a frozen latent-action teacher during training.</p>
+          <p class="boundary"><span>Deployment boundary</span> Future observations and the latent-action teacher are absent at inference. No future video is decoded.</p>
+        </div>
+      </div>
+      <figure class="paper-figure light-figure paradigm-figure">
+        <a href="static/figures/paradigm.pdf" target="_blank" rel="noopener" aria-label="Open the original WAM paradigm figure as PDF">
+          <img src="static/figures/paradigm.png" alt="Comparison of cascaded, joint, direct-policy, and ForeWAM paradigms during training and inference">
+        </a>
+        <figcaption><span>Figure 1.</span> ForeWAM retains direct action prediction while exposing action-relevant predictive dynamics through hidden future-slot K/V states and dynamics registers. <a href="static/figures/paradigm.pdf" target="_blank" rel="noopener">Open vector PDF</a></figcaption>
+      </figure>
+    </section>
+
+    <section id="method" class="section section-dark">
+      <div class="shell">
+        <div class="section-index">02 / METHOD</div>
+        <div class="section-heading">
+          <h2>One prefill.<br><em>Hidden futures.</em></h2>
+          <p>Distributed visual context through Future-KV; compact transition cues through dynamics registers.</p>
+        </div>
+
+        <figure class="paper-figure figure-wide">
+          <a href="static/figures/architecture.pdf" target="_blank" rel="noopener" aria-label="Open the original ForeWAM architecture figure as PDF">
+            <img src="static/figures/architecture.png" alt="ForeWAM architecture showing Future-KV and latent-action-supervised dynamics registers">
+          </a>
+          <figcaption><span>Figure 2.</span> ForeWAM training interface. Demonstrated future frames and the frozen teacher provide training signals; deployment uses only current observations and hidden latent states. <a href="static/figures/architecture.pdf" target="_blank" rel="noopener">Open vector PDF</a></figcaption>
+        </figure>
+
+        <div class="method-cards">
+          <article>
+            <div class="card-number">A</div>
+            <h3>Future-KV</h3>
+            <p>A clean current latent and noisy future slots pass through a single Video DiT prefill. Per-layer K/V states are cached and reused across all action-denoising steps.</p>
+          </article>
+          <article>
+            <div class="card-number">B</div>
+            <h3>Dynamics registers</h3>
+            <p>A frozen LaWAM teacher supervises 16 registers with a non-executable latent transition cue, emphasizing object motion, contact changes, and task progress.</p>
+          </article>
+          <article>
+            <div class="card-number">C</div>
+            <h3>Direct action policy</h3>
+            <p>The Action DiT reads hidden predictive context while directly generating a 32-step executable action chunk. The policy never rolls out or decodes future video.</p>
+          </article>
+        </div>
+
+        <div class="mask-panel">
+          <figure class="paper-figure mask-figure">
+            <a href="static/figures/mask.pdf" target="_blank" rel="noopener" aria-label="Open the original structured attention mask as PDF">
+              <img src="static/figures/mask.png" alt="Structured attention mask for current-frame, dynamics-register, future-slot, and action tokens">
+            </a>
+          </figure>
+          <div class="mask-copy">
+            <div class="section-index">STRUCTURED ROUTING</div>
+            <h3>A masked mixed-attention interface.</h3>
+            <p>Current tokens remain current-only. Dynamics registers read current context and themselves. Future slots integrate current context and registers, while action tokens read the complete video sequence, dynamics registers, and action history.</p>
+            <p class="technical-note">Functionally, the action path receives cross-modal context. Structurally, the implementation concatenates cached video K/V with action K/V under a joint attention mask rather than using a standalone cross-attention block.</p>
+            <a class="text-link" href="static/figures/mask.pdf" target="_blank" rel="noopener">Open vector PDF &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="results" class="section shell">
+      <div class="section-index">03 / RESULTS</div>
+      <div class="section-heading results-heading">
+        <h2>Predictive context<br><em>without the rollout.</em></h2>
+        <p>All reported ForeWAM variants use no embodied robot-data pretraining.</p>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric metric-blue">
+          <small>STANDARD LIBERO</small>
+          <strong>96.7<span>%</span></strong>
+          <p>ForeWAM average success over four suites, with 50 rollouts per task.</p>
+        </article>
+        <article class="metric metric-green">
+          <small>LIBERO-PLUS</small>
+          <strong>61.6<span>%</span></strong>
+          <p>Observed success rate on the evaluated subset across seven perturbation categories.</p>
+        </article>
+        <article class="metric metric-orange">
+          <small>FOREWAM-FLASH</small>
+          <strong>220<span> ms</span></strong>
+          <p>Standalone action-generation latency on one NVIDIA A800 GPU.</p>
+        </article>
+      </div>
+
+      <div class="charts">
+        <figure class="chart-card">
+          <figcaption><span>Standard LIBERO</span><small>Average success rate (%)</small></figcaption>
+          <div class="bar-row"><label>Fast-WAM</label><div class="bar"><i style="--value:97.6%"></i></div><b>97.6</b></div>
+          <div class="bar-row active"><label>ForeWAM</label><div class="bar"><i style="--value:96.7%"></i></div><b>96.7</b></div>
+          <div class="bar-row active flash"><label>ForeWAM-Flash</label><div class="bar"><i style="--value:96.9%"></i></div><b>96.9</b></div>
+        </figure>
+
+        <figure class="chart-card">
+          <figcaption><span>Action generation</span><small>Standalone latency (ms), lower is better</small></figcaption>
+          <div class="bar-row latency"><label>Fast-WAM</label><div class="bar"><i style="--value:100%"></i></div><b>667</b></div>
+          <div class="bar-row latency active"><label>ForeWAM</label><div class="bar"><i style="--value:85.2%"></i></div><b>568</b></div>
+          <div class="bar-row latency active flash"><label>ForeWAM-Flash</label><div class="bar"><i style="--value:33%"></i></div><b>220</b></div>
+        </figure>
+      </div>
+
+      <p class="result-note">Cross-method LIBERO-Plus numbers come from different sources and are descriptive rather than coverage-matched causal estimates. The 220 ms measurement is action-generation latency, not task-completion time.</p>
+    </section>
+
+    <section id="ood" class="section section-paper">
+      <div class="shell">
+        <div class="section-index">04 / OOD GENERALIZATION</div>
+        <div class="section-heading ood-heading">
+          <h2>Robust across<br><em>seven shifts.</em></h2>
+          <p>Observed success rate on LIBERO-Plus, which perturbs camera viewpoint, robot initialization, language, lighting, background, sensor noise, and object layout.</p>
+        </div>
+
+        <div class="ood-chart" role="img" aria-label="LIBERO-Plus success rates for Fast-WAM, ForeWAM, and ForeWAM-Flash across seven perturbation categories">
+          <div class="ood-legend" aria-hidden="true">
+            <span><i class="legend-fast"></i>Fast-WAM</span>
+            <span><i class="legend-ours"></i>ForeWAM</span>
+            <span><i class="legend-flash"></i>ForeWAM-Flash</span>
+          </div>
+          <div class="ood-grid">
+            <article class="ood-item"><h3>Camera</h3><div class="ood-bars"><i class="ood-fast" style="--score:16.4%"><b>16.4</b></i><i class="ood-ours" style="--score:62.5%"><b>62.5</b></i><i class="ood-flash" style="--score:57.9%"><b>57.9</b></i></div></article>
+            <article class="ood-item"><h3>Robot init.</h3><div class="ood-bars"><i class="ood-fast" style="--score:44.5%"><b>44.5</b></i><i class="ood-ours" style="--score:37.4%"><b>37.4</b></i><i class="ood-flash" style="--score:40.4%"><b>40.4</b></i></div></article>
+            <article class="ood-item"><h3>Language</h3><div class="ood-bars"><i class="ood-fast" style="--score:68.9%"><b>68.9</b></i><i class="ood-ours" style="--score:73%"><b>73.0</b></i><i class="ood-flash" style="--score:67.2%"><b>67.2</b></i></div></article>
+            <article class="ood-item"><h3>Lighting</h3><div class="ood-bars"><i class="ood-fast" style="--score:78.2%"><b>78.2</b></i><i class="ood-ours" style="--score:74.1%"><b>74.1</b></i><i class="ood-flash" style="--score:71%"><b>71.0</b></i></div></article>
+            <article class="ood-item"><h3>Background</h3><div class="ood-bars"><i class="ood-fast" style="--score:53.7%"><b>53.7</b></i><i class="ood-ours" style="--score:55.1%"><b>55.1</b></i><i class="ood-flash" style="--score:53%"><b>53.0</b></i></div></article>
+            <article class="ood-item"><h3>Sensor noise</h3><div class="ood-bars"><i class="ood-fast" style="--score:37.7%"><b>37.7</b></i><i class="ood-ours" style="--score:58.8%"><b>58.8</b></i><i class="ood-flash" style="--score:53.7%"><b>53.7</b></i></div></article>
+            <article class="ood-item"><h3>Object layout</h3><div class="ood-bars"><i class="ood-fast" style="--score:60.7%"><b>60.7</b></i><i class="ood-ours" style="--score:70.4%"><b>70.4</b></i><i class="ood-flash" style="--score:65.3%"><b>65.3</b></i></div></article>
+            <article class="ood-item ood-overall"><h3>Overall</h3><div class="ood-bars"><i class="ood-fast" style="--score:51.5%"><b>51.5</b></i><i class="ood-ours" style="--score:61.6%"><b>61.6</b></i><i class="ood-flash" style="--score:58.2%"><b>58.2</b></i></div></article>
+          </div>
+        </div>
+        <p class="result-note">ForeWAM gains most on camera viewpoint (+46.1 points over Fast-WAM) and sensor noise (+21.1), while trailing on robot-initial-state and lighting shifts. Results are from the observed LIBERO-Plus subset; external baselines use different source coverage.</p>
+      </div>
+    </section>
+
+    <section id="ablation" class="section shell">
+      <div class="section-index">05 / ABLATION STUDY</div>
+      <div class="section-heading ablation-heading">
+        <h2>Two paths work<br><em>better together.</em></h2>
+        <p>Overall observed LIBERO-Plus success rate for the Future-KV and latent-action supervision configurations.</p>
+      </div>
+
+      <div class="ablation-layout">
+        <div class="ablation-chart" role="img" aria-label="Ablation success rates: base policy 53.6, Future-KV only 58.5, latent-action supervision only 58.0, and both 61.6 percent">
+          <article><div><span>Base policy</span><small>No Future-KV, no LA supervision</small></div><div class="ablation-bar"><i style="--score:87.0%"></i></div><strong>53.6<span>%</span></strong></article>
+          <article><div><span>Future-KV only</span><small>Distributed predictive context</small></div><div class="ablation-bar"><i style="--score:95.0%"></i></div><strong>58.5<span>%</span></strong></article>
+          <article><div><span>LA supervision only</span><small>Compact transition cue</small></div><div class="ablation-bar"><i style="--score:94.2%"></i></div><strong>58.0<span>%</span></strong></article>
+          <article class="ablation-best"><div><span>Both</span><small>Future-KV + LA supervision</small></div><div class="ablation-bar"><i style="--score:100%"></i></div><strong>61.6<span>%</span></strong></article>
+        </div>
+        <aside class="ablation-callout"><strong>+3.1</strong><span>points over<br>Future-KV only</span><strong>+3.6</strong><span>points over<br>LA supervision only</span></aside>
+      </div>
+      <p class="result-note">Future-KV only, LA supervision only, and both each contain 1,482 observed evaluations and are coverage-matched. The Base policy contains 10,027 evaluations under a different coverage profile, so it is contextual rather than a matched estimate. No variant uses embodied pretraining.</p>
+    </section>
+
+    <section id="bibtex" class="section shell bibtex-section">
+      <div class="section-index">06 / BIBTEX</div>
+      <div class="bibtex-head">
+        <h2>Cite ForeWAM.</h2>
+        <button class="copy-button" type="button">Copy BibTeX</button>
+      </div>
+      <pre><code>@article{huang2026foresight,
+  title   = {Foresight Without Seeing: Latent Futures for World Action Models},
+  author  = {Huang, Jiakai and Wu, Zhongbo and Zhang, Zheng and Wang, Zihan and You, Shan and Huang, Tao},
+  journal = {arXiv preprint arXiv:2608.11605},
+  year    = {2026}
+}</code></pre>
+    </section>
+  </main>
+
+  <footer class="footer shell">
+    <p>ForeWAM · Foresight Without Seeing</p>
+    <p>Last updated August 2026</p>
+  </footer>
+
+  <script src="static/js/main.js"></script>
+</body>
+</html>

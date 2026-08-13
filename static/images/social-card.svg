@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#fffefa"/>
+  <path d="M0 510L1200 200V630H0Z" fill="#e8a33d" opacity=".34"/>
+  <g fill="none" stroke="#e2ddd2" opacity=".8">
+    <path d="M0 70H1200M0 140H1200M0 210H1200M0 280H1200M0 350H1200M0 420H1200M0 490H1200M0 560H1200"/>
+    <path d="M80 0V630M160 0V630M240 0V630M320 0V630M400 0V630M480 0V630M560 0V630M640 0V630M720 0V630M800 0V630M880 0V630M960 0V630M1040 0V630M1120 0V630"/>
+  </g>
+  <text x="70" y="240" fill="#26241f" font-family="Arial,sans-serif" font-size="75" font-weight="700">Foresight Without Seeing:</text>
+  <text x="70" y="335" fill="#26241f" font-family="Arial,sans-serif" font-size="67" font-weight="700">Latent Futures for</text>
+  <text x="70" y="420" fill="#26241f" font-family="Arial,sans-serif" font-size="67" font-weight="700">World Action Models</text>
+  <text x="76" y="485" fill="#817b70" font-family="monospace" font-size="23">FOREWAM · ARXIV:2608.11605</text>
+  <circle cx="1080" cy="505" r="38" fill="#e8a33d"/>
+</svg>
