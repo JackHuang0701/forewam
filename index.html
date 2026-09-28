@@ -13,6 +13,19 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="static/images/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="static/css/style.css">
+  <style>
+    .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .metric:nth-child(2) { border-right: 0; }
+    .metric:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+    .results-table { margin-top: 28px; overflow-x: auto; }
+    .results-table table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: right; }
+    .results-table caption { text-align: left; font-weight: 700; margin-bottom: 12px; }
+    .results-table th, .results-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .results-table th:first-child { text-align: left; }
+    .results-table thead { background: var(--paper-deep); }
+    .results-table .ours { background: var(--amber-soft); font-weight: 700; }
+    @media (max-width: 560px) { .metric-grid { grid-template-columns: 1fr; } .metric { border-right: 0; border-bottom: 1px solid var(--border); } .metric:last-child { border-bottom: 0; } }
+  </style>
 </head>
 <body>
   <div class="progress" aria-hidden="true"></div>
@@ -36,17 +49,22 @@
 
     <p class="authors reveal">
       <a href="https://github.com/JackHuang0701" target="_blank" rel="noopener">Jiakai Huang</a><sup>1,2</sup>
-      <span>Zhongbo Wu<sup>1,2</sup></span>
-      <span>Zheng Zhang<sup>2,3</sup></span>
-      <span>Zihan Wang<sup>1</sup></span>
+      <span>Zhongbo Wu<sup>1,2,3</sup></span>
+      <span>Siyu Xu<sup>5</sup></span>
+      <span>Zheng Zhang<sup>2,4</sup></span>
+      <span>Zihan Wang<sup>1,*</sup></span>
       <span>Shan You<sup>2</sup></span>
-      <span>Tao Huang<sup>1</sup></span>
+      <span>Chang Xu<sup>5</sup></span>
+      <span>Tao Huang<sup>1,†</sup></span>
     </p>
     <p class="affiliations reveal">
       <span><sup>1</sup>Shanghai Jiao Tong University</span>
       <span><sup>2</sup>ACE Robotics</span>
-      <span><sup>3</sup>Nanyang Technological University</span>
+      <span><sup>3</sup>Shanghai Innovation Institute</span>
+      <span><sup>4</sup>Nanyang Technological University</span>
+      <span><sup>5</sup>University of Sydney</span>
     </p>
+    <p class="affiliations reveal"><span>* Research intern.</span><span>† Corresponding author.</span></p>
 
     <div class="actions reveal">
       <a class="button button-primary" href="static/paper/ForeWAM.pdf" target="_blank" rel="noopener">Paper <span>PDF</span></a>
@@ -92,7 +110,8 @@
         </div>
         <div class="body-copy">
           <p class="lead">World Action Models face a practical trade-off: explicit future generation exposes scene evolution to the policy, but iterative video denoising adds latency. Direct policies act efficiently, yet lack an explicit inference-time interface for predictive dynamics.</p>
-          <p><strong>ForeWAM</strong> bridges this gap. It performs one Video DiT prefill over the current visual latent and stochastic future slots, then reuses the resulting layer-wise key-value states throughout action denoising. A compact set of dynamics registers is shaped by a frozen latent-action teacher during training.</p>
+          <p><strong>ForeWAM</strong> separates forecasting from rendering. One Video DiT prefill over the current visual latent and noise-initialized future slots produces reusable Future-KV context. Dynamics registers supervised by latent actions from a frozen teacher shape this context toward interaction-induced transitions. A lightweight, single-layer action decoder repeatedly reads the final Video DiT layer's cached key-value states throughout action denoising.</p>
+          <p>Without additional policy-level embodied pretraining, ForeWAM reaches <strong>59.2% on RoboCasa</strong> with 50 demonstrations per task, <strong>77.6% on LIBERO-Plus</strong>, and <strong>88.7 ms policy-query latency</strong> on an NVIDIA A800—a 6.27× speedup over Fast-WAM.</p>
           <p class="boundary"><span>Deployment boundary</span> Future observations and the latent-action teacher are absent at inference. No future video is decoded.</p>
         </div>
       </div>
@@ -123,7 +142,7 @@
           <article>
             <div class="card-number">A</div>
             <h3>Future-KV</h3>
-            <p>A clean current latent and noisy future slots pass through a single Video DiT prefill. Per-layer K/V states are cached and reused across all action-denoising steps.</p>
+            <p>A clean current latent and noisy future slots pass through a single Video DiT prefill. The final layer's K/V states are cached and reused by the single-layer action decoder across all action-denoising steps.</p>
           </article>
           <article>
             <div class="card-number">B</div>
@@ -158,24 +177,29 @@
       <div class="section-index">03 / RESULTS</div>
       <div class="section-heading results-heading">
         <h2>Predictive context<br><em>without the rollout.</em></h2>
-        <p>All reported ForeWAM variants use no embodied robot-data pretraining.</p>
+        <p>No additional policy-level embodied pretraining. A frozen latent-action teacher provides supervision during training only.</p>
       </div>
 
       <div class="metric-grid">
         <article class="metric metric-blue">
           <small>STANDARD LIBERO</small>
-          <strong>96.7<span>%</span></strong>
+          <strong>97.9<span>%</span></strong>
           <p>ForeWAM average success over four suites, with 50 rollouts per task.</p>
         </article>
         <article class="metric metric-green">
           <small>LIBERO-PLUS</small>
-          <strong>61.6<span>%</span></strong>
-          <p>Observed success rate on the evaluated subset across seven perturbation categories.</p>
+          <strong>77.6<span>%</span></strong>
+          <p>Full-benchmark success across seven perturbation categories; +26.1 percentage points over Fast-WAM.</p>
         </article>
         <article class="metric metric-orange">
-          <small>FOREWAM-FLASH</small>
-          <strong>220<span> ms</span></strong>
-          <p>Standalone action-generation latency on one NVIDIA A800 GPU.</p>
+          <small>ROBOCASA</small>
+          <strong>59.2<span>%</span></strong>
+          <p>24 kitchen tasks with 50 demonstrations per task; +9.7 percentage points over Fast-WAM.</p>
+        </article>
+        <article class="metric metric-blue">
+          <small>POLICY-QUERY LATENCY</small>
+          <strong>88.7<span> ms</span></strong>
+          <p>6.27× faster than Fast-WAM on one NVIDIA A800 with 10 action-denoising steps.</p>
         </article>
       </div>
 
@@ -183,19 +207,30 @@
         <figure class="chart-card">
           <figcaption><span>Standard LIBERO</span><small>Average success rate (%)</small></figcaption>
           <div class="bar-row"><label>Fast-WAM</label><div class="bar"><i style="--value:97.6%"></i></div><b>97.6</b></div>
-          <div class="bar-row active"><label>ForeWAM</label><div class="bar"><i style="--value:96.7%"></i></div><b>96.7</b></div>
-          <div class="bar-row active flash"><label>ForeWAM-Flash</label><div class="bar"><i style="--value:96.9%"></i></div><b>96.9</b></div>
+          <div class="bar-row active"><label>ForeWAM</label><div class="bar"><i style="--value:97.9%"></i></div><b>97.9</b></div>
         </figure>
 
         <figure class="chart-card">
-          <figcaption><span>Action generation</span><small>Standalone latency (ms), lower is better</small></figcaption>
-          <div class="bar-row latency"><label>Fast-WAM</label><div class="bar"><i style="--value:100%"></i></div><b>667</b></div>
-          <div class="bar-row latency active"><label>ForeWAM</label><div class="bar"><i style="--value:85.2%"></i></div><b>568</b></div>
-          <div class="bar-row latency active flash"><label>ForeWAM-Flash</label><div class="bar"><i style="--value:33%"></i></div><b>220</b></div>
+          <figcaption><span>Policy query</span><small>Overall latency (ms), lower is better</small></figcaption>
+          <div class="bar-row latency"><label>Fast-WAM</label><div class="bar"><i style="--value:100%"></i></div><b>556.3</b></div>
+          <div class="bar-row latency active"><label>ForeWAM</label><div class="bar"><i style="--value:15.94%"></i></div><b>88.7</b></div>
         </figure>
       </div>
 
-      <p class="result-note">Cross-method LIBERO-Plus numbers come from different sources and are descriptive rather than coverage-matched causal estimates. The 220 ms measurement is action-generation latency, not task-completion time.</p>
+      <p class="result-note">Latency is measured on LIBERO-10 using an NVIDIA A800 and 10 action-denoising steps; it includes VAE encoding, visual processing, action generation, and other overhead, not task-completion time. Action generation alone takes 21.7 ms for ForeWAM versus 470.6 ms for Fast-WAM.</p>
+      <div class="charts">
+        <figure class="chart-card">
+          <figcaption><span>RoboCasa</span><small>Success rate (%), 50 demos/task</small></figcaption>
+          <div class="bar-row"><label>Fast-WAM</label><div class="bar"><i style="--value:49.5%"></i></div><b>49.5</b></div>
+          <div class="bar-row active"><label>ForeWAM</label><div class="bar"><i style="--value:59.2%"></i></div><b>59.2</b></div>
+        </figure>
+        <figure class="chart-card">
+          <figcaption><span>Real-world manipulation</span><small>ForeWAM success rate (%)</small></figcaption>
+          <div class="bar-row active"><label>ID · four tasks</label><div class="bar"><i style="--value:92.5%"></i></div><b>92.5</b></div>
+          <div class="bar-row active"><label>OOD · two tasks</label><div class="bar"><i style="--value:40%"></i></div><b>40.0</b></div>
+        </figure>
+      </div>
+      <p class="result-note">Real-world evaluation uses an AgileX Piper arm trained on 125 demonstrations. ForeWAM improves ID success by 42.5 points over Fast-WAM. Under object-attribute shifts, its 40.0% OOD success exceeds Fast-WAM (10.0%) and Cosmos Policy (15.0%), but remains below π₀ (60.0%) and π₀.₅ (45.0%).</p>
     </section>
 
     <section id="ood" class="section section-paper">
@@ -203,27 +238,42 @@
         <div class="section-index">04 / OOD GENERALIZATION</div>
         <div class="section-heading ood-heading">
           <h2>Robust across<br><em>seven shifts.</em></h2>
-          <p>Observed success rate on LIBERO-Plus, which perturbs camera viewpoint, robot initialization, language, lighting, background, sensor noise, and object layout.</p>
+          <p>Full LIBERO-Plus results across camera viewpoint, robot initialization, language, lighting, background, sensor noise, and object layout.</p>
         </div>
 
-        <div class="ood-chart" role="img" aria-label="LIBERO-Plus success rates for Fast-WAM, ForeWAM, and ForeWAM-Flash across seven perturbation categories">
+        <div class="ood-chart" role="img" aria-label="Full LIBERO-Plus success rates for Fast-WAM and ForeWAM across seven perturbation categories; numerical results are also listed in the table below">
           <div class="ood-legend" aria-hidden="true">
             <span><i class="legend-fast"></i>Fast-WAM</span>
             <span><i class="legend-ours"></i>ForeWAM</span>
-            <span><i class="legend-flash"></i>ForeWAM-Flash</span>
           </div>
           <div class="ood-grid">
-            <article class="ood-item"><h3>Camera</h3><div class="ood-bars"><i class="ood-fast" style="--score:16.4%"><b>16.4</b></i><i class="ood-ours" style="--score:62.5%"><b>62.5</b></i><i class="ood-flash" style="--score:57.9%"><b>57.9</b></i></div></article>
-            <article class="ood-item"><h3>Robot init.</h3><div class="ood-bars"><i class="ood-fast" style="--score:44.5%"><b>44.5</b></i><i class="ood-ours" style="--score:37.4%"><b>37.4</b></i><i class="ood-flash" style="--score:40.4%"><b>40.4</b></i></div></article>
-            <article class="ood-item"><h3>Language</h3><div class="ood-bars"><i class="ood-fast" style="--score:68.9%"><b>68.9</b></i><i class="ood-ours" style="--score:73%"><b>73.0</b></i><i class="ood-flash" style="--score:67.2%"><b>67.2</b></i></div></article>
-            <article class="ood-item"><h3>Lighting</h3><div class="ood-bars"><i class="ood-fast" style="--score:78.2%"><b>78.2</b></i><i class="ood-ours" style="--score:74.1%"><b>74.1</b></i><i class="ood-flash" style="--score:71%"><b>71.0</b></i></div></article>
-            <article class="ood-item"><h3>Background</h3><div class="ood-bars"><i class="ood-fast" style="--score:53.7%"><b>53.7</b></i><i class="ood-ours" style="--score:55.1%"><b>55.1</b></i><i class="ood-flash" style="--score:53%"><b>53.0</b></i></div></article>
-            <article class="ood-item"><h3>Sensor noise</h3><div class="ood-bars"><i class="ood-fast" style="--score:37.7%"><b>37.7</b></i><i class="ood-ours" style="--score:58.8%"><b>58.8</b></i><i class="ood-flash" style="--score:53.7%"><b>53.7</b></i></div></article>
-            <article class="ood-item"><h3>Object layout</h3><div class="ood-bars"><i class="ood-fast" style="--score:60.7%"><b>60.7</b></i><i class="ood-ours" style="--score:70.4%"><b>70.4</b></i><i class="ood-flash" style="--score:65.3%"><b>65.3</b></i></div></article>
-            <article class="ood-item ood-overall"><h3>Overall</h3><div class="ood-bars"><i class="ood-fast" style="--score:51.5%"><b>51.5</b></i><i class="ood-ours" style="--score:61.6%"><b>61.6</b></i><i class="ood-flash" style="--score:58.2%"><b>58.2</b></i></div></article>
+            <article class="ood-item"><h3>Camera</h3><div class="ood-bars"><i class="ood-fast" style="--score:16.4%"><b>16.4</b></i><i class="ood-ours" style="--score:61.7%"><b>61.7</b></i></div></article>
+            <article class="ood-item"><h3>Robot init.</h3><div class="ood-bars"><i class="ood-fast" style="--score:44.5%"><b>44.5</b></i><i class="ood-ours" style="--score:56.8%"><b>56.8</b></i></div></article>
+            <article class="ood-item"><h3>Language</h3><div class="ood-bars"><i class="ood-fast" style="--score:68.9%"><b>68.9</b></i><i class="ood-ours" style="--score:85.1%"><b>85.1</b></i></div></article>
+            <article class="ood-item"><h3>Lighting</h3><div class="ood-bars"><i class="ood-fast" style="--score:78.2%"><b>78.2</b></i><i class="ood-ours" style="--score:95.8%"><b>95.8</b></i></div></article>
+            <article class="ood-item"><h3>Background</h3><div class="ood-bars"><i class="ood-fast" style="--score:53.7%"><b>53.7</b></i><i class="ood-ours" style="--score:76.5%"><b>76.5</b></i></div></article>
+            <article class="ood-item"><h3>Sensor noise</h3><div class="ood-bars"><i class="ood-fast" style="--score:37.7%"><b>37.7</b></i><i class="ood-ours" style="--score:89.1%"><b>89.1</b></i></div></article>
+            <article class="ood-item"><h3>Object layout</h3><div class="ood-bars"><i class="ood-fast" style="--score:60.7%"><b>60.7</b></i><i class="ood-ours" style="--score:83.0%"><b>83.0</b></i></div></article>
+            <article class="ood-item ood-overall"><h3>Overall</h3><div class="ood-bars"><i class="ood-fast" style="--score:51.5%"><b>51.5</b></i><i class="ood-ours" style="--score:77.6%"><b>77.6</b></i></div></article>
           </div>
         </div>
-        <p class="result-note">ForeWAM gains most on camera viewpoint (+46.1 points over Fast-WAM) and sensor noise (+21.1), while trailing on robot-initial-state and lighting shifts. Results are from the observed LIBERO-Plus subset; external baselines use different source coverage.</p>
+        <p class="result-note">ForeWAM improves all seven categories over Fast-WAM, with the largest gains on sensor noise (+51.4 points) and camera viewpoint (+45.3). It leads five of seven categories among the methods below and exceeds OpenVLA-OFT by 8.0 points overall.</p>
+        <div class="results-table" tabindex="0" role="region" aria-label="Full LIBERO-Plus comparison table">
+          <table>
+            <caption>LIBERO-Plus success rates (%): all seven categories and overall average.</caption>
+            <thead><tr><th scope="col">Method</th><th scope="col">Camera</th><th scope="col">Robot</th><th scope="col">Language</th><th scope="col">Light</th><th scope="col">Background</th><th scope="col">Noise</th><th scope="col">Layout</th><th scope="col">Avg.</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">OpenVLA</th><td>0.8</td><td>3.5</td><td>23.0</td><td>8.1</td><td>34.8</td><td>15.2</td><td>28.5</td><td>15.6</td></tr>
+              <tr><th scope="row">OpenVLA-OFT</th><td>56.4</td><td>31.9</td><td>79.5</td><td>88.7</td><td><strong>93.3</strong></td><td>75.8</td><td>74.2</td><td>69.6</td></tr>
+              <tr><th scope="row">π₀</th><td>13.8</td><td>6.0</td><td>58.8</td><td>85.0</td><td>81.4</td><td>79.0</td><td>68.9</td><td>53.6</td></tr>
+              <tr><th scope="row">π₀-Fast</th><td><strong>65.1</strong></td><td>21.6</td><td>61.0</td><td>73.2</td><td>73.2</td><td>74.4</td><td>68.8</td><td>61.6</td></tr>
+              <tr><th scope="row">UniVLA</th><td>1.8</td><td>46.2</td><td>69.6</td><td>69.0</td><td>81.0</td><td>21.2</td><td>31.9</td><td>42.9</td></tr>
+              <tr><th scope="row">WorldVLA</th><td>0.1</td><td>27.9</td><td>41.6</td><td>43.7</td><td>17.1</td><td>10.9</td><td>38.0</td><td>25.0</td></tr>
+              <tr><th scope="row">Fast-WAM</th><td>16.4</td><td>44.5</td><td>68.9</td><td>78.2</td><td>53.7</td><td>37.7</td><td>60.7</td><td>51.5</td></tr>
+              <tr class="ours"><th scope="row">ForeWAM</th><td>61.7</td><td>56.8</td><td>85.1</td><td>95.8</td><td>76.5</td><td>89.1</td><td>83.0</td><td>77.6</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -231,19 +281,31 @@
       <div class="section-index">05 / ABLATION STUDY</div>
       <div class="section-heading ablation-heading">
         <h2>Two paths work<br><em>better together.</em></h2>
-        <p>Overall observed LIBERO-Plus success rate for the Future-KV and latent-action supervision configurations.</p>
+        <p>Predictive-context design study on LIBERO-Plus. All four configurations use a 30-layer Action DiT under matched settings.</p>
       </div>
 
       <div class="ablation-layout">
-        <div class="ablation-chart" role="img" aria-label="Ablation success rates: base policy 53.6, Future-KV only 58.5, latent-action supervision only 58.0, and both 61.6 percent">
-          <article><div><span>Base policy</span><small>No Future-KV, no LA supervision</small></div><div class="ablation-bar"><i style="--score:87.0%"></i></div><strong>53.6<span>%</span></strong></article>
-          <article><div><span>Future-KV only</span><small>Distributed predictive context</small></div><div class="ablation-bar"><i style="--score:95.0%"></i></div><strong>58.5<span>%</span></strong></article>
-          <article><div><span>LA supervision only</span><small>Compact transition cue</small></div><div class="ablation-bar"><i style="--score:94.2%"></i></div><strong>58.0<span>%</span></strong></article>
-          <article class="ablation-best"><div><span>Both</span><small>Future-KV + LA supervision</small></div><div class="ablation-bar"><i style="--score:100%"></i></div><strong>61.6<span>%</span></strong></article>
+        <div class="ablation-chart" role="img" aria-label="Ablation success rates: base policy 53.6, Future-KV only 58.5, latent-action supervision only 54.8, and both 76.7 percent">
+          <article><div><span>Base policy</span><small>No Future-KV, no LA supervision</small></div><div class="ablation-bar"><i style="--score:69.9%"></i></div><strong>53.6<span>%</span></strong></article>
+          <article><div><span>Future-KV only</span><small>Distributed predictive context</small></div><div class="ablation-bar"><i style="--score:76.3%"></i></div><strong>58.5<span>%</span></strong></article>
+          <article><div><span>LA supervision only</span><small>Compact transition cue</small></div><div class="ablation-bar"><i style="--score:71.4%"></i></div><strong>54.8<span>%</span></strong></article>
+          <article class="ablation-best"><div><span>Both</span><small>Future-KV + LA supervision</small></div><div class="ablation-bar"><i style="--score:100%"></i></div><strong>76.7<span>%</span></strong></article>
         </div>
-        <aside class="ablation-callout"><strong>+3.1</strong><span>points over<br>Future-KV only</span><strong>+3.6</strong><span>points over<br>LA supervision only</span></aside>
+        <aside class="ablation-callout"><strong>+18.2</strong><span>points over<br>Future-KV only</span><strong>+21.9</strong><span>points over<br>LA supervision only</span></aside>
       </div>
-      <p class="result-note">Future-KV only, LA supervision only, and both each contain 1,482 observed evaluations and are coverage-matched. The Base policy contains 10,027 evaluations under a different coverage profile, so it is contextual rather than a matched estimate. No variant uses embodied pretraining.</p>
+      <p class="result-note">These matched component ablations use Wan2.1 and a 30-layer Action DiT, distinct from the single-layer ForeWAM configuration in the main results (77.6%). The 53.6% matched baseline is Fast-WAM retrained with Wan2.1, not the 6B Fast-WAM model (51.5%) in the main comparison.</p>
+      <div class="results-table" tabindex="0" role="region" aria-label="Component ablation table">
+        <table>
+          <caption>Predictive-context design study on LIBERO-Plus (%).</caption>
+          <thead><tr><th scope="col">Configuration</th><th scope="col">Camera</th><th scope="col">Robot</th><th scope="col">Language</th><th scope="col">Light</th><th scope="col">Background</th><th scope="col">Noise</th><th scope="col">Layout</th><th scope="col">Avg.</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Base policy</th><td>37.0</td><td>36.5</td><td>64.1</td><td>81.5</td><td>49.3</td><td>50.1</td><td>63.7</td><td>53.6</td></tr>
+            <tr><th scope="row">Future-KV only</th><td>37.8</td><td>41.0</td><td>63.9</td><td>83.4</td><td>65.7</td><td>61.5</td><td>65.6</td><td>58.5</td></tr>
+            <tr><th scope="row">LA supervision only</th><td>49.0</td><td>36.8</td><td>65.1</td><td>75.9</td><td>48.5</td><td>50.8</td><td>61.7</td><td>54.8</td></tr>
+            <tr class="ours"><th scope="row">Both</th><td>64.6</td><td>61.6</td><td>86.6</td><td>95.3</td><td>74.1</td><td>77.7</td><td>81.7</td><td>76.7</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section id="bibtex" class="section shell bibtex-section">
@@ -254,7 +316,7 @@
       </div>
       <pre><code>@article{huang2026foresight,
   title   = {Foresight Without Seeing: Latent Futures for World Action Models},
-  author  = {Huang, Jiakai and Wu, Zhongbo and Zhang, Zheng and Wang, Zihan and You, Shan and Huang, Tao},
+  author  = {Huang, Jiakai and Wu, Zhongbo and Xu, Siyu and Zhang, Zheng and Wang, Zihan and You, Shan and Xu, Chang and Huang, Tao},
   journal = {arXiv preprint arXiv:2608.11605},
   year    = {2026}
 }</code></pre>
@@ -263,7 +325,7 @@
 
   <footer class="footer shell">
     <p>ForeWAM · Foresight Without Seeing</p>
-    <p>Last updated August 2026</p>
+    <p>Last updated September 2026</p>
   </footer>
 
   <script src="static/js/main.js"></script>
