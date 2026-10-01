@@ -14,30 +14,96 @@
   <link rel="icon" href="static/images/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="static/css/style.css">
   <style>
-    .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .metric:nth-child(2) { border-right: 0; }
-    .metric:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+    :root { --ink:#182d37; --ink-soft:#465d65; --muted:#586d73; --paper:#f1f6f4; --paper-deep:#e5edeb; --white:#ffffff; --border:#d8e4df; --amber:#2a7b6d; --amber-dark:#1b6559; --amber-soft:#e3f1eb; }
+    body { background:linear-gradient(180deg,#f1f7f4 0,#fff 1000px); }
+    .shell { width:min(1120px,calc(100% - 64px)); }
+    a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline:3px solid #307fba; outline-offset:5px; }
+    section[id] { scroll-margin-top:90px; }
+    .side-nav { position:sticky; inset:0 0 auto; transform:none; display:flex; flex-direction:row; align-items:center; justify-content:center; flex-wrap:wrap; gap:4px; padding:14px 24px; background:rgba(255,255,255,.96); border-bottom:1px solid var(--border); backdrop-filter:blur(12px); }
+    .side-nav-title { color:var(--ink); font:800 17px var(--display); margin:0 24px 0 0; letter-spacing:-.04em; text-transform:none; }
+    .side-nav a { min-width:0; padding:9px 11px; border:0; border-radius:6px; color:var(--muted); }
+    .side-nav a.active, .side-nav a:hover { color:var(--amber-dark); background:var(--amber-soft); }
+    .hero { padding-block:65px 36px; }
+    .hero h1 { max-width:1000px; }
+    .title-line { font-size:clamp(2.1rem,4.2vw,3.3rem); line-height:1.15; }
+    .eyebrow { color:var(--amber-dark); }
+    .subtitle { max-width:780px; font-family:var(--display); font-size:clamp(1rem,1.7vw,1.2rem); line-height:1.6; }
+    .authors { gap:8px 20px; font-size:15px; }
+    .authors > span { white-space:nowrap; }
+    .affiliations { gap:5px 20px; line-height:1.7; }
+    .actions { margin:28px 0 40px; gap:12px; }
+    .button { padding:13px 19px; border-radius:8px; }
+    .button-primary { background:var(--amber-dark); border-color:var(--amber-dark); }
+    .button-primary span { color:#e2f1eb; }
+    .hero-feature { display:grid; grid-template-columns:1fr 1fr; gap:50px; align-items:center; padding:38px; border:1px solid var(--border); border-radius:18px; background:#fff; box-shadow:0 18px 60px #183c2d0c; text-align:left; }
+    .hero-feature .paper-figure { padding:0; border:0; }
+    .hero-feature h2 { font-size:clamp(2rem,3.5vw,3.5rem); line-height:1.12; }
+    .hero-feature p { color:var(--ink-soft); font-size:15px; }
+    .hero-facts { display:flex; gap:32px; margin:28px 0; padding-top:24px; border-top:1px solid var(--border); }
+    .hero-facts strong { display:block; color:var(--amber-dark); font-size:2.5rem; letter-spacing:-.06em; line-height:1.1; }
+    .hero-facts span { font-size:11px; color:var(--muted); }
+    .section { padding-block:78px; }
+    h2 { font-size:clamp(2.3rem,4vw,3.8rem); line-height:1.08; }
+    .section-grid { grid-template-columns:.8fr 1.2fr; gap:64px; }
+    .section-index { color:var(--amber-dark); font-size:11px; margin-bottom:24px; }
+    .section-heading p { font-size:15px; line-height:1.7; }
+    .paper-figure { padding:24px; border-radius:14px; box-shadow:0 5px 25px #17372b05; }
+    .paper-figure img { min-width:0; height:auto; }
+    .paper-figure figcaption { font:400 12px/1.7 var(--display); padding-top:8px; }
+    .paper-figure figcaption a { color:var(--amber-dark); }
+    .method-cards { border:0; gap:18px; }
+    .method-cards article { background:#fff; border:1px solid var(--border); border-radius:12px; min-height:0; padding:26px; }
+    .method-cards h3 { margin-top:23px; }
+    .mask-panel { gap:48px; margin-top:45px; padding-top:45px; }
+    .metric-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; border:0; overflow:visible; }
+    .metric { min-height:0; padding:25px 21px; background:#fff; border:1px solid var(--border); border-radius:12px; }
+    .metric:last-child { border:1px solid var(--border); background:var(--ink); color:#fff; }
+    .metric:last-child small, .metric:last-child p { color:#d3e2e2; }
+    .metric strong { font-size:3.5rem; margin-top:30px; }
+    .metric p { margin-top:25px; max-width:none; line-height:1.65; color:var(--ink-soft); }
+    .metric-green { background:var(--amber-soft); border-color:#b6d5c7; }
+    .charts { gap:20px; margin-top:24px; }
+    .chart-card { border-radius:12px; background:#fff; }
+    .result-note { font:400 12px/1.75 var(--display); }
+    .ood-chart { border-radius:14px; padding:28px; }
+    .ood-item { padding:20px 40px 20px 16px; }
+    .ood-bars { gap:13px; }
+    .ood-bars b { font-size:10px; }
+    .ood-bars i { min-width:0; height:10px; }
+    .ablation-callout { background:var(--ink); border-radius:12px; }
+    .ablation-callout strong { color:#9fd5be; }
+    .ablation-callout span { color:#d3e2e2; }
     .results-table { margin-top: 28px; overflow-x: auto; }
-    .results-table table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: right; }
+    .results-table table { width:100%; border-collapse:separate; border-spacing:0; font-size:12px; text-align:right; font-variant-numeric:tabular-nums; }
     .results-table caption { text-align: left; font-weight: 700; margin-bottom: 12px; }
     .results-table th, .results-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    .results-table th:first-child { text-align: left; }
+    .results-table th:first-child { text-align:left; position:sticky; left:0; background:#fff; z-index:1; }
+    .results-table thead th:first-child { background:var(--paper-deep); }
     .results-table thead { background: var(--paper-deep); }
     .results-table .ours { background: var(--amber-soft); font-weight: 700; }
-    @media (max-width: 560px) { .metric-grid { grid-template-columns: 1fr; } .metric { border-right: 0; border-bottom: 1px solid var(--border); } .metric:last-child { border-bottom: 0; } }
+    .results-table .ours th { background:var(--amber-soft); }
+    .results-table tbody tr:hover { background:#f1f6f4; }
+    .figure-intro { margin:40px 0 18px; font-size:1.45rem; letter-spacing:-.03em; }
+    .figure-hint { margin:12px 0 0; color:var(--muted); font-size:12px; }
+    .reveal { opacity:1; transform:none; }
+    .bar i, .ood-bars i, .ablation-bar i { transform:scaleX(1); }
+    pre { background:var(--ink); border-radius:12px; }
+    @media (max-width:900px) { .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .section-grid { grid-template-columns:1fr; gap:26px; } .hero-feature { gap:24px; padding:24px; } .side-nav-title { display:none; } }
+    @media (max-width:600px) { .shell { width:calc(100% - 32px); } .side-nav { justify-content:flex-start; flex-wrap:nowrap; overflow-x:auto; padding:10px 12px; } .side-nav a { flex-shrink:0; font-size:10px; padding:9px; } .hero { padding-top:40px; } .hero-feature { grid-template-columns:1fr; padding:22px; } .hero-feature .paper-figure { max-width:420px; margin:auto; } .hero-facts { margin:20px 0; } .metric-grid { gap:10px; } .metric { padding:21px 15px; } .metric strong { font-size:2.8rem; } .metric small { font-size:9px; } .metric p { font-size:11px; } .section { padding-block:54px; } .paper-figure { padding:12px; } .paper-figure img { min-width:0; } .ood-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .ood-chart { padding:12px; } .ood-item { padding:15px 35px 15px 10px; } .ood-item h3 { font-size:11px; } .ood-bars b { font-size:9px; } .bar-row { grid-template-columns:110px 1fr 44px; } .authors { gap:6px 14px; } }
   </style>
 </head>
 <body>
   <div class="progress" aria-hidden="true"></div>
 
   <nav class="side-nav" aria-label="Page sections">
-    <div class="side-nav-title">Contents</div>
+    <div class="side-nav-title">ForeWAM</div>
     <a href="#overview">01 <span>Overview</span></a>
     <a href="#method">02 <span>Method</span></a>
     <a href="#results">03 <span>Results</span></a>
-    <a href="#ood">04 <span>OOD</span></a>
-    <a href="#ablation">05 <span>Ablation</span></a>
-    <a href="#bibtex">06 <span>BibTeX</span></a>
+    <a href="#real-world">04 <span>Real world</span></a>
+    <a href="#ood">05 <span>Robustness</span></a>
+    <a href="#ablation">06 <span>Ablation</span></a>
+    <a href="#bibtex">07 <span>Cite</span></a>
   </nav>
 
   <header class="hero shell">
@@ -48,7 +114,7 @@
     <p class="subtitle reveal">A direct action policy with predictive dynamics, without decoding future videos at deployment.</p>
 
     <p class="authors reveal">
-      <a href="https://github.com/JackHuang0701" target="_blank" rel="noopener">Jiakai Huang</a><sup>1,2</sup>
+      <span><a href="https://github.com/JackHuang0701" target="_blank" rel="noopener">Jiakai Huang</a><sup>1,2</sup></span>
       <span>Zhongbo Wu<sup>1,2,3</sup></span>
       <span>Siyu Xu<sup>5</sup></span>
       <span>Zheng Zhang<sup>2,4</sup></span>
@@ -73,31 +139,18 @@
       <a class="button" href="#bibtex">Cite <span>BibTeX</span></a>
     </div>
 
-    <div class="latent-stage reveal" aria-label="Conceptual visualization of ForeWAM latent futures">
-      <div class="stage-grid"></div>
-      <div class="state state-current">
-        <small>OBSERVED</small>
-        <strong>C</strong>
-        <span>current latent</span>
+    <div class="hero-feature">
+      <div>
+        <div class="section-index">LATENT FORESIGHT · EFFICIENT CONTROL</div>
+        <h2>See the dynamics.<br><em>Not the pixels.</em></h2>
+        <p>One video prefill. Reusable predictive context. A single-layer action decoder—with no future-video generation at deployment.</p>
+        <div class="hero-facts"><div><strong>6.27×</strong><span>speedup over Fast-WAM</span></div><div><strong>+26.1</strong><span>LIBERO-Plus percentage points</span></div></div>
+        <a class="text-link" href="#results">Explore the results &rarr;</a>
       </div>
-      <div class="flow flow-one"><i></i><i></i><i></i></div>
-      <div class="state state-future">
-        <small>UNRENDERED</small>
-        <strong>F</strong>
-        <span>future slots</span>
-      </div>
-      <div class="cache">
-        <small>ONE PREFILL</small>
-        <div class="cache-stack"><i></i><i></i><i></i><i></i></div>
-        <span>Future-KV</span>
-      </div>
-      <div class="flow flow-two"><i></i><i></i><i></i></div>
-      <div class="state state-action">
-        <small>EXECUTABLE</small>
-        <strong>A</strong>
-        <span>action chunk</span>
-      </div>
-      <p class="stage-note">Predictive context travels through hidden states, not decoded future frames.</p>
+      <figure class="paper-figure">
+        <a href="static/figures/latency.pdf" target="_blank" rel="noopener" aria-label="Open performance versus latency figure"><img src="static/figures/latency.png" alt="ForeWAM reaches 77.6 percent LIBERO-Plus success at 88.7 ms, compared with Fast-WAM at 51.5 percent and 556.3 ms" width="2200" height="2161" fetchpriority="high"></a>
+        <figcaption>LIBERO-Plus success versus policy-query latency on A800. <a href="static/figures/latency.pdf" target="_blank" rel="noopener">View full-resolution figure ↗</a></figcaption>
+      </figure>
     </div>
   </header>
 
@@ -165,7 +218,7 @@
           <div class="mask-copy">
             <div class="section-index">STRUCTURED ROUTING</div>
             <h3>A masked mixed-attention interface.</h3>
-            <p>Current tokens remain current-only. Dynamics registers read current context and themselves. Future slots integrate current context and registers, while action tokens read the complete video sequence, dynamics registers, and action history.</p>
+            <p>Current tokens remain current-only. Future slots read current context and attend bidirectionally to other future slots. Dynamics registers aggregate current, future, and register states without feeding back into visual tokens. Action queries read these cached states together with the current action-token K/V.</p>
             <p class="technical-note">Functionally, the action path receives cross-modal context. Structurally, the implementation concatenates cached video K/V with action K/V under a joint attention mask rather than using a standalone cross-attention block.</p>
             <a class="text-link" href="static/figures/mask.pdf" target="_blank" rel="noopener">Open vector PDF &rarr;</a>
           </div>
@@ -218,6 +271,11 @@
       </div>
 
       <p class="result-note">Latency is measured on LIBERO-10 using an NVIDIA A800 and 10 action-denoising steps; it includes VAE encoding, visual processing, action generation, and other overhead, not task-completion time. Action generation alone takes 21.7 ms for ForeWAM versus 470.6 ms for Fast-WAM.</p>
+      <div class="results-table" tabindex="0" role="region" aria-label="Inference latency breakdown">
+        <table><caption>Where the time goes · latency per policy query (ms)</caption><thead><tr><th scope="col">Stage</th><th scope="col">Fast-WAM</th><th scope="col">ForeWAM</th></tr></thead><tbody>
+          <tr><th scope="row">VAE encoding</th><td>12.7</td><td>10.0</td></tr><tr><th scope="row">Visual processing</th><td>47.7</td><td>46.4</td></tr><tr><th scope="row">Action generation</th><td>470.6</td><td>21.7</td></tr><tr><th scope="row">Other</th><td>25.3</td><td>10.6</td></tr><tr class="ours"><th scope="row">Overall</th><td>556.3</td><td>88.7</td></tr>
+        </tbody></table>
+      </div>
       <div class="charts">
         <figure class="chart-card">
           <figcaption><span>RoboCasa</span><small>Success rate (%), 50 demos/task</small></figcaption>
@@ -230,12 +288,23 @@
           <div class="bar-row active"><label>OOD · two tasks</label><div class="bar"><i style="--value:40%"></i></div><b>40.0</b></div>
         </figure>
       </div>
-      <p class="result-note">Real-world evaluation uses an AgileX Piper arm trained on 125 demonstrations. ForeWAM improves ID success by 42.5 points over Fast-WAM. Under object-attribute shifts, its 40.0% OOD success exceeds Fast-WAM (10.0%) and Cosmos Policy (15.0%), but remains below π₀ (60.0%) and π₀.₅ (45.0%).</p>
+    </section>
+
+    <section id="real-world" class="section section-paper">
+      <div class="shell">
+        <div class="section-index">04 / REAL-WORLD MANIPULATION</div>
+        <div class="section-heading"><h2>From latent context<br><em>to physical action.</em></h2><p>Four tabletop tasks. An AgileX Piper arm. 125 teleoperated demonstrations, with third-person and wrist cameras.</p></div>
+        <figure class="paper-figure"><a href="static/figures/real-robot.pdf" target="_blank" rel="noopener" aria-label="Open real-world experiment results"><img loading="lazy" src="static/figures/real-robot.png" alt="Real-world task examples and success rates: ForeWAM averages 92.5 percent in distribution and 40 percent under object-attribute shifts"></a><figcaption><span>Real-world results.</span> Per-task and average success rates on ID and OOD tasks. <a href="static/figures/real-robot.pdf" target="_blank" rel="noopener">View full-resolution figure ↗</a></figcaption></figure>
+        <p class="result-note">ForeWAM improves ID success by 42.5 points over Fast-WAM. Under object-attribute shifts, its 40.0% OOD success exceeds Fast-WAM (10.0%) and Cosmos Policy (15.0%), but remains below π₀ (60.0%) and π₀.₅ (45.0%).</p>
+        <h3 class="figure-intro">What does the action pathway attend to?</h3>
+        <figure class="paper-figure"><a href="static/figures/attention.pdf" target="_blank" rel="noopener" aria-label="Open action-to-image attention examples"><img loading="lazy" src="static/figures/attention.png" alt="Selected main-camera and wrist-camera attention examples comparing Fast-WAM with ForeWAM"></a><figcaption><span>Attention analysis.</span> Selected qualitative examples show more localized ForeWAM attention around interaction-relevant regions. These visualizations are exploratory examples, not an aggregate causal evaluation. <a href="static/figures/attention.pdf" target="_blank" rel="noopener">View full-resolution figure ↗</a></figcaption></figure>
+        <p class="figure-hint">Tap any figure to inspect its full-resolution PDF.</p>
+      </div>
     </section>
 
     <section id="ood" class="section section-paper">
       <div class="shell">
-        <div class="section-index">04 / OOD GENERALIZATION</div>
+        <div class="section-index">05 / OOD GENERALIZATION</div>
         <div class="section-heading ood-heading">
           <h2>Robust across<br><em>seven shifts.</em></h2>
           <p>Full LIBERO-Plus results across camera viewpoint, robot initialization, language, lighting, background, sensor noise, and object layout.</p>
@@ -278,7 +347,7 @@
     </section>
 
     <section id="ablation" class="section shell">
-      <div class="section-index">05 / ABLATION STUDY</div>
+      <div class="section-index">06 / ABLATION STUDY</div>
       <div class="section-heading ablation-heading">
         <h2>Two paths work<br><em>better together.</em></h2>
         <p>Predictive-context design study on LIBERO-Plus. All four configurations use a 30-layer Action DiT under matched settings.</p>
@@ -309,7 +378,7 @@
     </section>
 
     <section id="bibtex" class="section shell bibtex-section">
-      <div class="section-index">06 / BIBTEX</div>
+      <div class="section-index">07 / BIBTEX</div>
       <div class="bibtex-head">
         <h2>Cite ForeWAM.</h2>
         <button class="copy-button" type="button">Copy BibTeX</button>
@@ -325,7 +394,7 @@
 
   <footer class="footer shell">
     <p>ForeWAM · Foresight Without Seeing</p>
-    <p>Last updated September 2026</p>
+    <p>Updated October 1, 2026 · Figures and results from the current manuscript</p>
   </footer>
 
   <script src="static/js/main.js"></script>
